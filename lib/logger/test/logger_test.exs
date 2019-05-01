@@ -308,6 +308,7 @@ defmodule LoggerTest do
     Logger.configure(compile_time_purge_matching: [])
   end
 
+  @compile {:no_warn_undefined, LoggerTest.Unused}
   test "unused variable warnings suppressed when we remove macros from the AST" do
     Logger.configure(compile_time_purge_level: :info)
 

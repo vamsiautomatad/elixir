@@ -2,6 +2,7 @@ defmodule Mix.Hex do
   @moduledoc false
   @hex_requirement ">= 0.14.0"
   @hex_mirror "https://repo.hex.pm"
+  @compile {:no_warn_undefined, Hex}
 
   @doc """
   Returns `true` if `Hex` is loaded or installed. Otherwise returns `false`.

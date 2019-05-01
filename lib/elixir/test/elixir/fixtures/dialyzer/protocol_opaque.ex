@@ -1,10 +1,3 @@
-defmodule Dialyzer.ProtocolOpaque do
-  def circus() do
-    duck = Dialyzer.ProtocolOpaque.Duck.new()
-    Dialyzer.ProtocolOpaque.Entity.speak(duck)
-  end
-end
-
 defprotocol Dialyzer.ProtocolOpaque.Entity do
   @fallback_to_any true
   def speak(entity)
@@ -25,5 +18,12 @@ end
 defimpl Dialyzer.ProtocolOpaque.Entity, for: Any do
   def speak(_any) do
     "I can be anything"
+  end
+end
+
+defmodule Dialyzer.ProtocolOpaque do
+  def circus() do
+    duck = Dialyzer.ProtocolOpaque.Duck.new()
+    Dialyzer.ProtocolOpaque.Entity.speak(duck)
   end
 end

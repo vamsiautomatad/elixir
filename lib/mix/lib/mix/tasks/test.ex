@@ -500,6 +500,8 @@ defmodule Mix.Tasks.Test do
     [autorun: false] ++ opts
   end
 
+  @compile {:no_warn_undefined, ExUnit.Filters}
+
   defp parse_files([], test_paths) do
     test_paths
   end

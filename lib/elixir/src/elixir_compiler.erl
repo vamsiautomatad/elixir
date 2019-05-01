@@ -147,6 +147,7 @@ bootstrap_main() ->
    <<"lib/elixir/lib/macro.ex">>,
    <<"lib/elixir/lib/code.ex">>,
    <<"lib/elixir/lib/code/identifier.ex">>,
+   <<"lib/elixir/lib/module/checker.ex">>,
    <<"lib/elixir/lib/module/locals_tracker.ex">>,
    <<"lib/elixir/lib/kernel/typespec.ex">>,
    <<"lib/elixir/lib/kernel/utils.ex">>,
@@ -156,6 +157,8 @@ bootstrap_main() ->
    <<"lib/elixir/lib/enum.ex">>,
    <<"lib/elixir/lib/inspect/algebra.ex">>,
    <<"lib/elixir/lib/inspect.ex">>,
+   <<"lib/elixir/lib/access.ex">>,
+   <<"lib/elixir/lib/range.ex">>,
    <<"lib/elixir/lib/regex.ex">>,
    <<"lib/elixir/lib/string.ex">>,
    <<"lib/elixir/lib/string/chars.ex">>,
@@ -166,7 +169,9 @@ bootstrap_main() ->
    <<"lib/elixir/lib/kernel/cli.ex">>,
    <<"lib/elixir/lib/kernel/error_handler.ex">>,
    <<"lib/elixir/lib/kernel/parallel_compiler.ex">>,
-   <<"lib/elixir/lib/kernel/lexical_tracker.ex">>].
+   <<"lib/elixir/lib/kernel/lexical_tracker.ex">>,
+   %% Recompile kernel as it can now depend on other modules.
+   <<"lib/elixir/lib/kernel.ex">>].
 
 binary_to_path({ModuleName, Binary}, CompilePath) ->
   Path = filename:join(CompilePath, atom_to_list(ModuleName) ++ ".beam"),

@@ -285,16 +285,19 @@ defmodule Kernel.ParallelCompiler do
     # There is potentially a deadlock. We will release modules with
     # the following order:
     #
-    #   1. Code.ensure_compiled?/1 checks (deadlock = soft)
-    #   2. Struct checks (deadlock = hard)
-    #   3. Modules without a known definition
-    #   4. Code invocation (deadlock = raise)
+    #   1. Definition checks (deadlock = definition)
+    #   2. Code.ensure_compiled?/1 checks (deadlock = soft)
+    #   3. Struct checks (deadlock = hard)
+    #   4. Modules without a known definition
+    #   5. Code invocation (deadlock = raise)
     #
     # In theory there is no difference between hard and raise, the
     # difference is where the raise is happening, inside the compiler
     # or in the caller.
     cond do
-      deadlocked = deadlocked(waiting, :soft) || deadlocked(waiting, :hard) ->
+      deadlocked =
+          deadlocked(waiting, :definition) || deadlocked(waiting, :soft) ||
+            deadlocked(waiting, :hard) ->
         spawn_workers(deadlocked, spawned, waiting, files, result, warnings, state)
 
       without_definition = without_definition(waiting, files) ->
@@ -323,7 +326,7 @@ defmodule Kernel.ParallelCompiler do
   end
 
   defp deadlocked(waiting, type) do
-    nillify_empty(for {_, _, ref, _, _, ^type} <- waiting, do: {ref, :not_found})
+    nillify_empty(for {_, _, ref, _, _, ^type} <- waiting, do: {ref, :deadlock})
   end
 
   defp nillify_empty([]), do: nil

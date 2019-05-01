@@ -30,13 +30,17 @@ defmodule Code do
   the result of evaluating the file rather than the modules it defines.
   """
 
-  @available_compiler_options [
+  @boolean_compiler_options [
     :docs,
     :debug_info,
     :ignore_module_conflict,
     :relative_paths,
     :warnings_as_errors
   ]
+
+  @list_compiler_options [:no_warn_undefined, :no_autoload_modules]
+
+  @available_compiler_options @boolean_compiler_options ++ @list_compiler_options
 
   @doc """
   Lists all required files.
@@ -905,9 +909,14 @@ defmodule Code do
   @spec compiler_options(Enumerable.t()) :: %{optional(atom) => boolean}
   def compiler_options(opts) do
     Enum.each(opts, fn
-      {key, value} when key in @available_compiler_options ->
+      {key, value} when key in @boolean_compiler_options ->
         if not is_boolean(value) do
           raise "compiler option #{inspect(key)} should be a boolean, got: #{inspect(value)}"
+        end
+
+      {key, value} when key in @list_compiler_options ->
+        if not is_list(value) do
+          raise "compiler option :no_autoload_modules should be a list, got: #{inspect(value)}"
         end
 
       {key, _} ->
@@ -1072,6 +1081,7 @@ defmodule Code do
           case Kernel.ErrorHandler.ensure_compiled(module, :module, :soft) do
             :found -> {:module, module}
             :not_found -> error
+            :deadlock -> error
           end
         else
           error

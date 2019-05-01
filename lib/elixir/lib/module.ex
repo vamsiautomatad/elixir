@@ -480,19 +480,13 @@ defmodule Module do
   Elixir and Erlang compilers. Some of the common use cases are documented
   below:
 
-    * `@compile :debug_info` - includes `:debug_info` regardless of the
-      corresponding setting in `Code.compiler_options/1`
-
-    * `@compile {:debug_info, false}` - disables `:debug_info` regardless
-      of the corresponding setting in `Code.compiler_options/1`
-
     * `@compile {:inline, some_fun: 2, other_fun: 3}` - inlines the given
       name/arity pairs. Inlining is applied locally, calls from another
       module are not affected by this option
 
-    * `@compile {:autoload, false}` - disables automatic loading of
-      modules after compilation. Instead, the module will be loaded after
-      it is dispatched to
+    * `@compile {:no_warn_undefined, Mod}` or
+      `@compile {:no_warn_undefined, {Mod, :fun, arity}} - does not warn if
+      the given module or the given `Mod.fun/arity` are not defined
 
   You can see a handful more options used by the Erlang compiler in
   the documentation for the [`:compile` module](http://www.erlang.org/doc/man/compile.html).

@@ -94,9 +94,6 @@ compile(Line, Module, Block, Vars, E) ->
     %% evaluates code in a separate process that may write to locals table.
     elixir_locals:stop({DataSet, DataBag}),
 
-    (not elixir_config:get(bootstrap)) andalso
-     'Elixir.Module':check_behaviours_and_impls(E, DataSet, DataBag, AllDefinitions),
-
     RawCompileOpts = bag_lookup_element(DataBag, {accumulate, compile}, 2),
     CompileOpts = validate_compile_opts(RawCompileOpts, AllDefinitions, Unreachable, File, Line),
 
@@ -114,9 +111,12 @@ compile(Line, Module, Block, Vars, E) ->
       deprecated => get_deprecated(DataBag)
     },
 
+    (not elixir_config:get(bootstrap)) andalso
+      'Elixir.Module.Checker':check(E, DataSet, DataBag, ModuleMap),
+
     Binary = elixir_erl:compile(ModuleMap),
     warn_unused_attributes(File, DataSet, DataBag, PersistedAttributes),
-    autoload_module(Module, Binary, CompileOpts, NE),
+    autoload_module(Module, Binary, NE),
     eval_callbacks(Line, DataBag, after_compile, [NE, Binary], NE),
     make_module_available(Module, Binary),
     {module, Module, Binary, Result}
@@ -272,14 +272,14 @@ build(Line, File, Module) ->
     {?counter_attr, 0}
   ]),
 
-  Persisted = [behaviour, on_load, external_resource, dialyzer, vsn],
-  ets:insert(DataBag, [{persisted_attributes, Attr} || Attr <- Persisted]),
-
   OnDefinition =
     case elixir_config:get(bootstrap) of
       false -> {'Elixir.Module', compile_definition_attributes};
       _ -> {elixir_module, delete_definition_attributes}
     end,
+
+  Persisted = [behaviour, on_load, external_resource, dialyzer, vsn],
+  ets:insert(DataBag, [{persisted_attributes, Attr} || Attr <- Persisted]),
   ets:insert(DataBag, {{accumulate, on_definition}, OnDefinition}),
 
   %% Setup definition related modules
@@ -373,10 +373,10 @@ bag_lookup_element(Table, Name, Pos) ->
 
 %% Takes care of autoloading the module if configured.
 
-autoload_module(Module, Binary, Opts, E) ->
-  case proplists:get_value(autoload, Opts, true) of
-    true  -> code:load_binary(Module, beam_location(E), Binary);
-    false -> ok
+autoload_module(Module, Binary, E) ->
+  case lists:member(Module, elixir_compiler:get_opt(no_autoload_modules)) of
+    true -> ok;
+    false -> code:load_binary(Module, beam_location(E), Binary)
   end.
 
 beam_location(#{module := Module}) ->

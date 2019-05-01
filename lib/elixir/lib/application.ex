@@ -537,6 +537,7 @@ defmodule Application do
 
   It receives the same options as `put_env/4`. Returns `:ok`.
   """
+  @compile {:no_warn_undefined, {:application, :set_env, 2}}
   @spec put_all_env([{app, [{key, value}]}], timeout: timeout, persistent: boolean) :: :ok
   def put_all_env(config, opts \\ []) when is_list(config) and is_list(opts) do
     # TODO: Remove function exported? check when we require Erlang/OTP 22+

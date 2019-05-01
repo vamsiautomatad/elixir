@@ -525,8 +525,9 @@ expand_fn_capture(Meta, Arg, E) ->
   case elixir_fn:capture(Meta, Arg, E) of
     {{remote, Remote, Fun, Arity}, EE} ->
       is_atom(Remote) andalso
-        elixir_lexical:record_remote(Remote, Fun, Arity, ?key(E, function), ?line(Meta), ?key(E, lexical_tracker)),
-      {{'&', Meta, [{'/', [], [{{'.', [], [Remote, Fun]}, [], []}, Arity]}]}, EE};
+        elixir_lexical:record_remote(Remote, ?key(E, function), ?key(E, lexical_tracker)),
+      DotMeta = attach_context_module(Remote, [], E),
+      {{'&', Meta, [{'/', [], [{{'.', DotMeta, [Remote, Fun]}, [], []}, Arity]}]}, EE};
     {{local, Fun, Arity}, #{function := nil}} ->
       form_error(Meta, E, ?MODULE, {undefined_local_capture, Fun, Arity});
     {{local, Fun, Arity}, EE} ->
@@ -791,23 +792,32 @@ expand_local(Meta, Name, Args, #{module := Module, function := Function} = E) ->
 
 %% Remote
 
-expand_remote(Receiver, DotMeta, Right, Meta, Args, #{context := Context} = E, EL) when is_atom(Receiver) or is_tuple(Receiver) ->
+expand_remote(Receiver, DotMeta, Right, Meta, Args, E, EL) when is_atom(Receiver) or is_tuple(Receiver) ->
   assert_no_clauses(Right, Meta, Args, E),
-
-  Arity = length(Args),
-  is_atom(Receiver) andalso
-    elixir_lexical:record_remote(Receiver, Right, Arity,
-                                 ?key(E, function), ?line(Meta), ?key(E, lexical_tracker)),
   {EArgs, EA} = expand_args(Args, E),
-  case rewrite(Context, Receiver, DotMeta, Right, Meta, EArgs) of
+  AttachedDotMeta = attach_context_module(Receiver, DotMeta, E),
+
+  is_atom(Receiver) andalso
+    elixir_lexical:record_remote(Receiver, ?key(E, function), ?key(E, lexical_tracker)),
+
+  case rewrite(?key(E, context), Receiver, AttachedDotMeta, Right, Meta, EArgs) of
     {ok, Rewritten} ->
       maybe_warn_comparison(Rewritten, Args, E),
       {Rewritten, elixir_env:mergev(EL, EA)};
-    {error, Error} -> form_error(Meta, E, elixir_rewrite, Error)
+    {error, Error} ->
+      form_error(Meta, E, elixir_rewrite, Error)
   end;
 expand_remote(Receiver, DotMeta, Right, Meta, Args, E, _) ->
   Call = {{'.', DotMeta, [Receiver, Right]}, Meta, Args},
   form_error(Meta, E, ?MODULE, {invalid_call, Call}).
+
+attach_context_module(_Receiver, Meta, #{function := nil}) ->
+  Meta;
+attach_context_module(Receiver, Meta, #{context_modules := ContextModules}) ->
+  case lists:member(Receiver, ContextModules) of
+    true -> [{context_module, true} | Meta];
+    false -> Meta
+  end.
 
 rewrite(match, Receiver, DotMeta, Right, Meta, EArgs) ->
   elixir_rewrite:match_rewrite(Receiver, DotMeta, Right, Meta, EArgs);

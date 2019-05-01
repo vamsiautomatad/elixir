@@ -366,4 +366,15 @@ defmodule Code.SyncTest do
     {:ok, claimed} = Code.purge_compiler_modules()
     assert claimed == 0
   end
+
+  test "no_autoload_modules" do
+    Code.compiler_options(no_autoload_modules: [__MODULE__.NoAutoload])
+
+    defmodule NoAutoload do
+    end
+
+    refute :code.is_loaded(NoAutoload)
+  after
+    Code.compiler_options(no_autoload_modules: [])
+  end
 end
